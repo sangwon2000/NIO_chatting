@@ -18,6 +18,13 @@ public class Room {
         if(!folder.exists()) folder.mkdirs();
     }
 
+    public Member getMemberBySocketChannel(SocketChannel socketChannel) {
+        for(int i=0; i<memberList.size(); i++) {
+            if(memberList.get(i).hasSocket(socketChannel)) return memberList.get(i);
+        }
+        return null;
+    }
+
     // getter from chatName
     public String getChatName() {
         return this.chatName;
@@ -37,13 +44,6 @@ public class Room {
             if(memberList.get(i) == member) return true;
         }
         return  false;
-    }
-
-    public Member getMemberBySocketChannel(SocketChannel socketChannel) {
-        for(int i=0; i<memberList.size(); i++) {
-            if(memberList.get(i).hasSocket(socketChannel)) return memberList.get(i);
-        }
-        return null;
     }
 
     // send message to all members in this room

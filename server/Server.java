@@ -24,8 +24,8 @@ public class Server {
     public static void main(String[] args) {
         try {
             // port setting
-            int port1 = Integer.parseInt(args[0]);
-            int port2 = Integer.parseInt(args[1]);
+            int port1 = 1004; //Integer.parseInt(args[0]);
+            int port2 = 1005; //Integer.parseInt(args[1]);
 
             // create folder for file transmission
             File folder = new File("server/file");
@@ -51,6 +51,9 @@ public class Server {
 
             System.out.println("The server was successfully opened");
 
+            SocketChannel chatSocketChannel = null;
+            SocketChannel fileSocketChannel = null;
+
             // accept client and add to waiting room
             while(true) {
 
@@ -59,19 +62,21 @@ public class Server {
                 Set<SelectionKey> selectedKeys = selector.selectedKeys();
                 Iterator<SelectionKey> iterator = selectedKeys.iterator();
 
-                SocketChannel chatSocketChannel = null;
-                SocketChannel fileSocketChannel = null;
-
                 while(iterator.hasNext()) {
                     SelectionKey selectionKey = iterator.next();
+                    iterator.remove();
 
                     if(selectionKey.isAcceptable()) {
                         ServerSocketChannel serverSocketChannel = (ServerSocketChannel)selectionKey.channel();
                         if(serverSocketChannel == chatServerChannel)
                             chatSocketChannel = serverSocketChannel.accept();
+
                         else fileSocketChannel = serverSocketChannel.accept();
 
-                        if(chatSocketChannel != null && fileSocketChannel != null) {
+                        if((chatSocketChannel != null) && (fileSocketChannel != null)) {
+
+                            chatSocketChannel.configureBlocking(false);
+                            chatSocketChannel.register(selector, selectionKey.OP_READ);
 
                             Member member = new Member(chatSocketChannel, fileSocketChannel);
                             goWaitingRoom(member);
@@ -83,12 +88,22 @@ public class Server {
                     }
 
                     if(selectionKey.isReadable()) {
+
                         SocketChannel socketChannel = (SocketChannel)selectionKey.channel();
                         Member member = socketChannelToMember(socketChannel);
-
-                        ByteBuffer buffer = ByteBuffer.allocate(1024);
-                        int length = socketChannel.read(buffer);
-                        String message = buffer.array().toString().substring(0,length);
+                        String message = "";
+                        int index;
+                        while(true) {
+                            ByteBuffer buffer = ByteBuffer.allocate(1024);
+                            int length = socketChannel.read(buffer);
+                            String temp = new String(buffer.array()).substring(0,length);
+                            index = temp.indexOf('\n');
+                            if(index == -1) message += temp;
+                            else {
+                                message += temp.substring(0,index);
+                                break;
+                            }
+                        }
 
                         workMessage(member,message);
                     }
@@ -104,7 +119,7 @@ public class Server {
 //-----------------------------------------------------------------------------------
 
     private static Member socketChannelToMember(SocketChannel socketChannel) {
-        for(int i=1; i<roomList.size(); i++) {
+        for(int i=0; i<roomList.size(); i++) {
             Member member = roomList.get(i).getMemberBySocketChannel(socketChannel);
             if(member != null) {
                 return member;
@@ -116,6 +131,7 @@ public class Server {
     private static void workMessage(Member member, String message) throws Exception {
         String[] split = message.split(" ");
 
+        System.out.println("message: " + message);
         if(split[0].equalsIgnoreCase("#CREATE"))
             createRoom(member,split[1],split[2]);
         else if(split[0].equalsIgnoreCase("#JOIN"))
@@ -131,8 +147,10 @@ public class Server {
         else chatRoom(member,message);
     }
 
+    //-------------------------------------------------------------------------------------------------
     // methods using deal with client's message
     public static void createRoom(Member member, String chatName, String nickName) throws Exception {
+        System.out.println("create");
         for(int i=1; i<roomList.size(); i++) {
             if(roomList.get(i).getChatName().equals(chatName)) {
                 member.sendMessage(("Duplicate chat room name exists."));
