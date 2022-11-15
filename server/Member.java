@@ -20,8 +20,7 @@ public class Member {
         return (chatSocketChannel == socketChannel || fileSocketChannel == socketChannel);
     }
 
-//---------------------------------------------------------------------------------------------
-
+//------------------------------------------------------------------------------------------
     // getter and setter for nickName
     public String getNickName() {
         return nickName;
@@ -29,6 +28,7 @@ public class Member {
     public void setNickName(String nickName) {
         this.nickName = nickName;
     }
+//------------------------------------------------------------------------------------------
 
     // send message to client's chatSocket
     public void sendMessage(String message) throws Exception {
@@ -50,7 +50,6 @@ public class Member {
             Thread.sleep(100);
             ByteBuffer buffer = ByteBuffer.allocate(65536);
             int length = fileSocketChannel.read(buffer);
-            System.out.println(length);
             fos.write(buffer.array(),0,length);
             System.out.print("#");
             if(length < 65536) break;
@@ -64,13 +63,13 @@ public class Member {
         File file = new File(path);
         if(file.exists()) {
             BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-            byte[] buffer = new byte[65536]; // send 64KB breaks each
 
             String[] split = path.split("/");
             sendMessage("#PUT " + split[3]);
 
             System.out.println("----- send start -----");
             while(bis.available() > 0) {
+                byte[] buffer = new byte[65536];
                 int length = bis.read(buffer);
                 fileSocketChannel.write(ByteBuffer.wrap(buffer,0,length));
                 System.out.print("#");
