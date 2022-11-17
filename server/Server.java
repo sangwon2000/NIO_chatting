@@ -16,14 +16,14 @@ import java.util.Set;
 public class Server {
 
     static private ArrayList<Room> roomList; // current room list
-    static private ServerSocketChannel chatServerChannel; // Socket for connecting new socket to client's chatSocket
-    static private ServerSocketChannel fileServerChannel; // Socket for connecting new socket to client's fileSocket
+    static private ServerSocketChannel chatServerChannel; // Channel for connecting new socket to client's chatSocket
+    static private ServerSocketChannel fileServerChannel; // Channel for connecting new socket to client's fileSocket
 
-    static private Selector selector;
+    static private Selector selector; // main selector
 
     public static void main(String[] args) {
         try {
-            // port setting
+            // Server's port setting
             int port1 = Integer.parseInt(args[0]);
             int port2 = Integer.parseInt(args[1]);
 
@@ -34,7 +34,8 @@ public class Server {
 
             selector = Selector.open();
 
-            // create sockets
+            // create Server socket channel and register this to selector
+
             chatServerChannel = ServerSocketChannel.open();
             chatServerChannel.configureBlocking(false);
             chatServerChannel.bind(new InetSocketAddress(port1));
@@ -45,7 +46,7 @@ public class Server {
             fileServerChannel.bind(new InetSocketAddress(port2));
             fileServerChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-            // create waiting room
+            // initialize roomList create waiting room
             roomList = new ArrayList<Room>();
             roomList.add(new Room("Waiting Room"));
 
@@ -54,7 +55,7 @@ public class Server {
             SocketChannel chatSocketChannel = null;
             SocketChannel fileSocketChannel = null;
 
-            // accept client and add to waiting room
+            
             while(true) {
 
                 int keyCount = selector.select();
@@ -66,14 +67,17 @@ public class Server {
                     SelectionKey selectionKey = iterator.next();
                     iterator.remove();
 
+                    // accept a client and add the client to waiting room
                     if(selectionKey.isAcceptable()) {
                         ServerSocketChannel serverSocketChannel = (ServerSocketChannel)selectionKey.channel();
                         if(serverSocketChannel == chatServerChannel)
                             chatSocketChannel = serverSocketChannel.accept();
                         else fileSocketChannel = serverSocketChannel.accept();
 
+                        // connect to both Socket Channel
                         if((chatSocketChannel != null) && (fileSocketChannel != null)) {
 
+                            //register chat Chnnel to the Selector
                             chatSocketChannel.configureBlocking(false);
                             chatSocketChannel.register(selector, selectionKey.OP_READ);
 
@@ -86,6 +90,7 @@ public class Server {
                         }
                     }
 
+                    // receive the message from Client's Chat socket
                     if(selectionKey.isReadable()) {
 
                         SocketChannel socketChannel = (SocketChannel)selectionKey.channel();
@@ -104,6 +109,7 @@ public class Server {
                             }
                         }
 
+                        // work the message
                         workMessage(member,message);
                     }
                 }
@@ -116,6 +122,7 @@ public class Server {
 
     }
 //-----------------------------------------------------------------------------------
+// this function translate Socket Channel to member who have this Socket Channel 
     private static Member socketChannelToMember(SocketChannel socketChannel) {
         for(int i=0; i<roomList.size(); i++) {
             Member member = roomList.get(i).getMemberBySocketChannel(socketChannel);

@@ -18,6 +18,7 @@ public class Room {
         if(!folder.exists()) folder.mkdirs();
     }
 
+    // return the member who have this Socket Channel in the room
     public Member getMemberBySocketChannel(SocketChannel socketChannel) {
         for(int i=0; i<memberList.size(); i++) {
             if(memberList.get(i).hasSocket(socketChannel)) return memberList.get(i);

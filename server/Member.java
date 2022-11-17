@@ -6,8 +6,8 @@ import java.nio.channels.SocketChannel;
 
 public class Member {
 
-    private SocketChannel chatSocketChannel;
-    private SocketChannel fileSocketChannel;
+    private SocketChannel chatSocketChannel; // used for sending message to client's chatSocket
+    private SocketChannel fileSocketChannel; // used for file transmission
     private String nickName; // current nickname in room
 
     public Member(SocketChannel chatSocketChannel, SocketChannel fileSocketChannel) {
@@ -16,6 +16,7 @@ public class Member {
         this.nickName = "nameless";
     }
 
+    // return if this member has this Socket Channel
     public boolean hasSocket(SocketChannel socketChannel) {
         return (chatSocketChannel == socketChannel || fileSocketChannel == socketChannel);
     }
